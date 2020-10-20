@@ -1,6 +1,5 @@
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
 #include "helper.hpp"
-using namespace std;
 
 
 /*
@@ -10,11 +9,11 @@ class ProblemState
 {
 
 public:
-    set<pair<int, int>> boxes;        // location of boxes
-    static set<pair<int, int>> holes; // location of holes common for all ProblemState obj hence static
-    pair<int, int> robo;              // location of the agent/player
-    string actions;
-    ProblemState(set<pair<int, int>> boxes, pair<int, int> robo, string actions="")
+    std::set<std::pair<int, int>> boxes;        // location of boxes
+    inline static std::set<std::pair<int, int>> holes; // location of holes common for all ProblemState obj hence static
+    std::pair<int, int> robo;              // location of the agent/player
+    std::string actions;
+    ProblemState(std::set<std::pair<int, int>> boxes, std::pair<int, int> robo, std::string actions="")
     {
         this->boxes = boxes;
         this->robo = robo;
@@ -24,11 +23,15 @@ public:
     {
     }
 
-    bool hasBoxAt(pair<int,int> pos)
+    bool hasBoxAt(std::pair<int,int> pos)
     {
         return boxes.count(pos);
     }
 
+    bool operator< (const ProblemState  & P) const
+    {
+        return actions < P.actions;
+    }
 
 };
 
@@ -36,9 +39,9 @@ class Level
 {
 private:
     int h, w; // height and width 
-    vector<string> level; // padded level representation
+    std::vector<std::string> level; // padded level representation
 public:
-    Level(vector<string> &level_representation)
+    Level(std::vector<std::string> &level_representation)
     {
 
         this->h = level_representation.size();
@@ -69,8 +72,8 @@ public:
 
     ProblemState getStartState()
     {
-        pair<int, int> ini_robo_pos;
-        set<pair<int, int>> boxes, holes;
+        std::pair<int, int> ini_robo_pos;
+        std::set<std::pair<int, int>> boxes, holes;
 
         for (int i = 0; i < h; i++)
             for (int j = 0; j < w; j++)
@@ -101,7 +104,7 @@ public:
     {
         if(!isInsideBounds(x,y))
         {
-            cerr<<"Queries for wrong position"<<endl;
+            std::cerr<<"Queries for wrong position"<<std::endl;
             return 1;
         }
         if(level[x][y]==_WALL_) return 1;
@@ -118,7 +121,7 @@ public:
     ProblemState startState;
     long long nodesExpanded;
     
-    Problem(vector<string> &level_representation)
+    Problem(std::vector<std::string> &level_representation)
     {
         this->level = Level(level_representation);
         this->startState = level.getStartState();
@@ -135,15 +138,15 @@ public:
         return 1;
     }
 
-    vector<ProblemState>  getSuccessorStates( ProblemState & state)
+    std::vector<ProblemState>  getSuccessorStates( ProblemState & state)
     {
-        pair<int,int> cur_pos= state.robo;
-        set<pair<int,int>> & holes= ProblemState:: holes;
-        set<pair<int,int>> cur_boxes= state.boxes;
-        string cur_actions= state.actions;
+        std::pair<int,int> cur_pos= state.robo;
+        std::set<std::pair<int,int>> & holes= ProblemState:: holes;
+        std::set<std::pair<int,int>> cur_boxes= state.boxes;
+        std::string cur_actions= state.actions;
         int cur_x= cur_pos.first;
         int cur_y= cur_pos.second;
-        vector<ProblemState> successorStates;
+        std::vector<ProblemState> successorStates;
 
         for(int i=0; i<4; i++)
         {
@@ -153,8 +156,8 @@ public:
 
             if(! state.hasBoxAt({new_x,new_y}) ) 
             {
-                pair<int,int> pp={new_x,new_y};
-                set<pair<int,int>> new_boxes=cur_boxes;
+                std::pair<int,int> pp={new_x,new_y};
+                std::set<std::pair<int,int>> new_boxes=cur_boxes;
                 ProblemState  successorState(new_boxes,pp,cur_actions+dir[i]);
                 successorStates.push_back(successorState);
                 continue;
@@ -162,8 +165,8 @@ public:
 
             if(state.hasBoxAt({new_x,new_y}) && !state.hasBoxAt({new_x+dx[i],new_y+dy[i]})  &&  !level.isWall(new_x+dx[i],new_y+dy[i]))
             {
-                pair<int,int> new_pos= {new_x,new_y};
-                set<pair<int,int>> new_boxes= cur_boxes;
+                std::pair<int,int> new_pos= {new_x,new_y};
+                std::set<std::pair<int,int>> new_boxes= cur_boxes;
 
                 new_boxes.erase({new_x,new_y});
                 new_boxes.insert({new_x+dx[i],new_y+dy[i]});
