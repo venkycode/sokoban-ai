@@ -13,11 +13,16 @@ public:
     inline static std::set<std::pair<int, int>> holes; // location of holes common for all ProblemState obj hence static
     std::pair<int, int> robo;              // location of the agent/player
     std::string actions;
+    bool hashed;
+    unsigned long long hashv; 
     ProblemState(std::set<std::pair<int, int>> boxes, std::pair<int, int> robo, std::string actions="")
     {
         this->boxes = boxes;
         this->robo = robo;
         this->actions= actions;
+        hashed=0;
+        this->hashv=hash();
+        hashed=1;
     }
     ProblemState()
     {
@@ -33,6 +38,28 @@ public:
         return actions < P.actions;
     }
 
+    bool operator == (const ProblemState & anotherState) const
+    {
+        return ((boxes==anotherState.boxes) && (robo==anotherState.robo));
+    }
+
+    
+    unsigned long long hash() const
+    {
+        unsigned long long seed= boxes.size();
+        if(hashed) return hashv;
+        for(auto & pp: boxes)
+        {
+            seed^= pp.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed^= pp.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed^= (pp.first+pp.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        } 
+        seed^= robo.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        seed^= robo.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        seed^= (robo.first+robo.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        
+        return seed;
+    }
 };
 
 class Level
@@ -111,6 +138,45 @@ public:
         return 0;
     }
 
+    bool isWall(std::pair<int,int> pos)
+    {
+        int x= pos.first;
+        int y= pos.second;
+        if(!isInsideBounds(x,y))
+        {
+            std::cerr<<"Queries for wrong position"<<std::endl;
+            return 1;
+        }
+        if(level[x][y]==_WALL_) return 1;
+        return 0;
+    }
+
+    bool isDeadLock(std::pair<int ,int > pos)
+    {   
+
+        int x= pos.first;
+        int y= pos.second;
+        std::map<char,std::pair<int,int>> possibleMove;
+
+        for(int i=0; i<4;i++) possibleMove[dir[i]]={x+dx[i],y+dy[i]};
+
+        if( (isWall(possibleMove['U'])|| isWall(possibleMove['D']))
+            &&
+            (isWall(possibleMove['R'])|| isWall(possibleMove['L']))
+        ) return 1;
+
+        return 0;
+    }
+
+    bool isDeadEnd(ProblemState & state)
+    {
+        for(auto pp: state.boxes)
+        {
+            if(ProblemState:: holes.count(pp)) continue;
+            if(isDeadLock(pp)) return true;
+        }
+        return false;
+    }
 };
 
 class Problem
@@ -159,7 +225,7 @@ public:
                 std::pair<int,int> pp={new_x,new_y};
                 std::set<std::pair<int,int>> new_boxes=cur_boxes;
                 ProblemState  successorState(new_boxes,pp,cur_actions+dir[i]);
-                successorStates.push_back(successorState);
+                if(! level.isDeadEnd(successorState))successorStates.push_back(successorState);
                 continue;
             }
 
@@ -171,7 +237,7 @@ public:
                 new_boxes.erase({new_x,new_y});
                 new_boxes.insert({new_x+dx[i],new_y+dy[i]});
                 ProblemState successorState(new_boxes,new_pos,cur_actions+dir[i]);
-                successorStates.push_back(successorState);
+                if(! level.isDeadEnd(successorState)) successorStates.push_back(successorState);
                 continue;
             }
         }

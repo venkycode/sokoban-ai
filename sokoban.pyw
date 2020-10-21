@@ -36,7 +36,7 @@ def makeLevel(string):
 def findPlayer():
     for i in range(w):
         for j in range(h):
-            if(p[j][i] == 'O'):
+            if(p[j][i] == '@'):
                 return(i,j)
 
 def kvadrat(x, y, barva):
@@ -57,73 +57,73 @@ def draw():
         for j in range(h):
             if(p[j][i] == '#'):
                 kvadrat(i*wid, j*hei, "#252525")
-            if(p[j][i] == 'O'):
+            if(p[j][i] == '@'):
+                krog(i*wid, j*hei, "red")
+            if(p[j][i] == '$'):
+                kvadrat(i*wid, j*hei, "blue")
+            if(p[j][i] == '.'):
+                kvadrat(i*wid, j*hei, "yellow")
+            if(p[j][i] == '+'):
+                kvadrat(i*wid, j*hei, "yellow")
                 krog(i*wid, j*hei, "red")
             if(p[j][i] == '*'):
-                kvadrat(i*wid, j*hei, "blue")
-            if(p[j][i] == 'X'):
-                kvadrat(i*wid, j*hei, "yellow")
-            if(p[j][i] == 'A'):
-                kvadrat(i*wid, j*hei, "yellow")
-                krog(i*wid, j*hei, "red")
-            if(p[j][i] == 'R'):
                 kvadrat(i*wid, j*hei, "pink")
             
             
 def kill(event):
     root.destroy()
 
-def odmik(x, y):
+def movePlayerFrom(x, y):
     #global ply_y, ply_x
-    if(p[y][x] == 'O'):
+    if(p[y][x] == '@'):
         p[y][x] = ' '
-    if(p[y][x] == 'A'):
-        p[y][x] = 'X'
+    if(p[y][x] == '+'):
+        p[y][x] = '.'
 
-def premik_na(x, y):
-    if(p[y][x] == 'X'):
-        p[y][x] = 'A'
+def movePlayerTo(x, y):
+    if(p[y][x] == '.'):
+        p[y][x] = '+'
     if(p[y][x] == ' '):
-        p[y][x] = 'O'
+        p[y][x] = '@'
 
-def odmik_stvar(x, y):
+def moveBoxFrom(x, y):
+    if(p[y][x] == '$'):
+        p[y][x] = ' '
     if(p[y][x] == '*'):
-        p[y][x] = ' '
-    if(p[y][x] == 'R'):
-        p[y][x] = 'X'
+        p[y][x] = '.'
         
-def premik_stvar_na(x, y):
+def moveBoxTo(x, y):
     if(p[y][x] == ' '):
+        p[y][x] = '$'
+    if(p[y][x] == '.'):
         p[y][x] = '*'
-    if(p[y][x] == 'X'):
-        p[y][x] = 'R'
 
 
 def premikanje(x, y):
 #    print("Hej")
     global ply_y, ply_x
     if(p[ply_y + y][ply_x + x] in dovoljeni):
-        odmik(ply_x, ply_y)
+        movePlayerFrom(ply_x, ply_y)
         ply_y += y
         ply_x += x
-        premik_na(ply_x, ply_y)
+        movePlayerTo(ply_x, ply_y)
 
     elif(p[ply_y + y][ply_x + x] in premikajoci):
         if(p[ply_y + 2*y][ply_x + 2*x] in dovoljeni):
-            odmik_stvar(ply_x + x, ply_y + y)
-            premik_stvar_na(ply_x + 2*x, ply_y + 2*y)
-            odmik(ply_x, ply_y)
+            moveBoxFrom(ply_x + x, ply_y + y)
+            moveBoxTo(ply_x + 2*x, ply_y + 2*y)
+            movePlayerFrom(ply_x, ply_y)
             ply_y += y
             ply_x += x
-            premik_na(ply_x, ply_y)
+            movePlayerTo(ply_x, ply_y)
             
 
-def jeZmaga():
+def isWin():
     for i in p:
         for j in i:
-            if(j == 'X'):
+            if(j == '.'):
                 return False
-            elif(j == 'A'):
+            elif(j == '+'):
                 return False
     return True
 
@@ -143,7 +143,7 @@ def movement(n):
         premikanje(1, 0)
 
     draw()
-    if(jeZmaga()):
+    if(isWin()):
         showinfo("You won!", "Congratulations, you won!")
         root.destroy()
     
@@ -193,8 +193,8 @@ else:
     w = len(p[0])
     h = len(p)
 
-    dovoljeni = [' ', 'X']
-    premikajoci = ['*', 'R']
+    dovoljeni = [' ', '.']
+    premikajoci = ['$', '*']
 
 
     max_width = 1000

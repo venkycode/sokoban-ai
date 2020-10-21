@@ -11,8 +11,8 @@ int main()
         getline(cin,s);
         inp.push_back(s);
     }
-    //for(auto s: inp) cout<<s<<std::endl;
+
     Problem P(inp);
 
-    cout<<AStar(P);       
+    cout<<AStar(P)<<endl;       
 }
