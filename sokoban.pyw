@@ -10,7 +10,8 @@ try:
     from tkinter.messagebox import *
 except ImportError:
     from tkMessageBox import *
-
+import sys
+from time import sleep
 """
     O ... igralec
     # ... zid
@@ -39,8 +40,9 @@ def findPlayer():
             if(p[j][i] == '@'):
                 return(i,j)
 
-def kvadrat(x, y, barva):
-    canvas.create_rectangle(x, y, x+wid, y+hei, fill=barva)
+def kvadrat(x, y, barva,flag=0):
+    if flag: canvas.create_rectangle(x+wid*0.2, y+wid*0.2, x+wid*0.8, y+hei*0.8, fill=barva)
+    else:canvas.create_rectangle(x, y, x+wid, y+hei, fill=barva)
 
 def krog(x, y, barva):
     canvas.create_oval(x, y, x+wid, y+hei, fill=barva)
@@ -60,14 +62,15 @@ def draw():
             if(p[j][i] == '@'):
                 krog(i*wid, j*hei, "red")
             if(p[j][i] == '$'):
-                kvadrat(i*wid, j*hei, "blue")
+                kvadrat(i*wid, j*hei, "blue",1)
             if(p[j][i] == '.'):
                 kvadrat(i*wid, j*hei, "yellow")
             if(p[j][i] == '+'):
                 kvadrat(i*wid, j*hei, "yellow")
                 krog(i*wid, j*hei, "red")
             if(p[j][i] == '*'):
-                kvadrat(i*wid, j*hei, "pink")
+                kvadrat(i*wid, j*hei, "green")
+                kvadrat(i*wid, j*hei, "pink",1)
             
             
 def kill(event):
@@ -160,8 +163,9 @@ def restart():
 
 
 def keyHandler(event):
-    foo = event.keysym
-    movement(foo)
+    if not solutionGiven:
+        foo = event.keysym
+        movement(foo)
     if(event.char == 'r'):
         restart()
 
@@ -185,7 +189,13 @@ def askLevel():
         else:
             top.destroy()
             return(False)
-    
+
+
+solutionGiven=0
+
+if(sys.argv.count("-runWithSolution")) : solutionGiven=1
+
+#print(solutionGiven)
 p = askLevel()
 if(not p):
     pass
@@ -226,5 +236,33 @@ else:
 
     root.bind_all("<Escape>", kill)
     root.bind_all("<Key>", keyHandler)
+    if not solutionGiven: root.mainloop()
+    st= input()
 
-    root.mainloop()
+    print(st,type(st))
+    
+
+    if solutionGiven:
+        firstmove=1
+        for mv in st:
+            root.update()
+            mv1='X'
+            if mv=='U': mv1='Up'
+            elif mv=='R': mv1='Right'
+            elif mv=='L': mv1='Left'
+            elif mv=='D': mv1='Down'
+            print(mv)
+            movement(mv1)
+            if not firstmove:sleep(0.3)
+            else:
+                sleep(3)
+                firstmove=0
+                root.update()
+
+            root.update()
+        root.mainloop()
+        
+
+                
+
+    

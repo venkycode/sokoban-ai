@@ -68,7 +68,12 @@ std::string AStar(Problem problem)
             std::cout<<problem.nodesExpanded<<std::endl;
             return cur_node.second.actions;
         }
-        if(problem.nodesExpanded> 1e6 ) return cur_node.second.actions;
+        if(problem.nodesExpanded> 1e7 ) 
+        {
+            std::cout<<problem.nodesExpanded<<std::endl;
+            std::cerr<<"Failure";
+            return cur_node.second.actions;
+        }
         long long cur_g = cur_node.first.second;
         ProblemState &cur_state = cur_node.second;
         cur_g++;

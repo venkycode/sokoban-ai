@@ -67,6 +67,7 @@ class Level
 private:
     int h, w; // height and width 
     std::vector<std::string> level; // padded level representation
+    std::vector<std:: vector<bool> > deadlockTable;
 public:
     Level(std::vector<std::string> &level_representation)
     {
@@ -91,6 +92,7 @@ public:
                 level_representation[i].push_back(_WALL_);
             }
         }
+        deadlockTable.assign(h,std::vector<bool>(w,1));
         this->level = level_representation;
     }
     Level()
@@ -117,9 +119,35 @@ public:
             }
         
         ProblemState:: holes= holes;
-
+        createDeadlockTable(holes);
         return ProblemState(boxes,ini_robo_pos);
     }
+
+    void createDeadlockTable(std::set< std:: pair<int,int>> & holes)
+    {
+        std::set<std::pair<int,std::pair<int,int>>> bfsq;
+        for(auto pp: holes) bfsq.insert({0,pp});
+        std::vector<std::vector<bool>> vis(h,std:: vector<bool>(w,0));
+        while(!bfsq.empty())
+        {
+            auto pp= *bfsq.begin();
+            bfsq.erase(bfsq.begin());
+
+            int x= pp.second.first;
+            int y= pp.second.second;
+            deadlockTable[x][y]=0;
+            vis[x][y]=1;
+            int c= pp.first;
+            c++;
+            for(int i=0; i<4; i++)
+            {
+                if(isWall(x+dx[i],y+dy[i])|| isWall(x+2*dx[i],y+2*dy[i])) continue;
+                if(vis[x+dx[i]][y+dy[i]]) continue;
+                bfsq.insert({c, {x+dx[i],y+dy[i]}});  
+            }
+        }
+    }
+
 
     bool isInsideBounds(int x,int y)
     {
@@ -153,19 +181,7 @@ public:
 
     bool isDeadLock(std::pair<int ,int > pos)
     {   
-
-        int x= pos.first;
-        int y= pos.second;
-        std::map<char,std::pair<int,int>> possibleMove;
-
-        for(int i=0; i<4;i++) possibleMove[dir[i]]={x+dx[i],y+dy[i]};
-
-        if( (isWall(possibleMove['U'])|| isWall(possibleMove['D']))
-            &&
-            (isWall(possibleMove['R'])|| isWall(possibleMove['L']))
-        ) return 1;
-
-        return 0;
+        return deadlockTable[pos.first][pos.second];
     }
 
     bool isDeadEnd(ProblemState & state)
@@ -176,6 +192,10 @@ public:
             if(isDeadLock(pp)) return true;
         }
         return false;
+    }
+    std :: vector<std::string> & getLevelVector()
+    {
+        return this->level;
     }
 };
 
