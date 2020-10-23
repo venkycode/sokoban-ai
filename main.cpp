@@ -14,5 +14,6 @@ int main()
 
     Problem P(inp);
 
-    cout<<AStar(P)<<endl;       
+ //cout<<AStar(P,closestHoleHeur)<<endl;
+    cout<<AStar(P,minBipartiteHeuristic)<<endl;
 }

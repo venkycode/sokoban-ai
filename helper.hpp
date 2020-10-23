@@ -30,3 +30,16 @@ inline bool remin(T &a, T b) //  assign min value to a
 {
     return a > b ? a = b, 1 : 0;
 }
+
+
+long long hashSetOfPairs(std::set<std:: pair<int,int>> &inp )
+{
+        unsigned long long seed= inp.size();
+        for(auto & pp: inp)
+        {
+            seed^= 1ll*pp.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed^= 1ll*pp.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed^= (1ll*pp.first+1ll*pp.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+}
