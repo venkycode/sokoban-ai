@@ -43,3 +43,12 @@ long long hashSetOfPairs(std::set<std:: pair<int,int>> &inp )
         }
         return seed;
 }
+
+
+inline void progressLogger(long long & cnt)
+{
+    static long long last=0;
+
+    if(( (last+1)<<15   ) <cnt) {std::cerr<<((last+1)<<15)<<std::endl; last++;}
+
+}

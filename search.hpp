@@ -122,6 +122,9 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S)
             std::cout<<problem.nodesExpanded<<std::endl;
             return cur_node.second.actions;
         }
+
+        progressLogger(problem.nodesExpanded) ;
+
         if(problem.nodesExpanded> 1e7 ) 
         {
             std::cout<<problem.nodesExpanded<<std::endl;

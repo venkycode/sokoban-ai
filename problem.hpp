@@ -184,9 +184,74 @@ public:
         return 0;
     }
 
-    bool isDeadLock(std::pair<int, int> pos)
+    bool isVerticallyBlocked(std:: pair<int,int>  pos )
     {
-        return deadlockTable[pos.first][pos.second];
+        int x= pos.first;
+        int y= pos.second;
+
+        std::map<char, std::pair<int, int>> possibleMove;
+
+        for (int i = 0; i < 4; i++)
+            possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
+
+
+        return (isWall(possibleMove['U'])||isWall(possibleMove['D']));
+        
+    }
+
+    bool isHorizontallyBlocked(std:: pair<int,int>  pos )
+    {
+        int x= pos.first;
+        int y= pos.second;
+
+        std::map<char, std::pair<int, int>> possibleMove;
+
+        for (int i = 0; i < 4; i++)
+            possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
+
+
+        return (isWall(possibleMove['R'])||isWall(possibleMove['L']));
+
+    }
+
+    bool checkDynamicDeadlock(std::pair<int, int> pos, ProblemState &state)
+    {
+        int x = pos.first;
+        int y = pos.second;
+        if (deadlockTable[x][y])
+            return 1;
+
+        std::map<char, std::pair<int, int>> possibleMove;
+
+        for (int i = 0; i < 4; i++)
+            possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
+
+        if(
+            isVerticallyBlocked(pos) 
+            &&
+            (
+                (state.hasBoxAt(possibleMove['R'])&& isVerticallyBlocked(possibleMove['R']))
+                ||
+                (state.hasBoxAt(possibleMove['L'])&& isVerticallyBlocked(possibleMove['L'])) 
+            )            
+        ) return 1;
+
+        if(
+            isHorizontallyBlocked(pos) 
+            &&
+            (
+                (state.hasBoxAt(possibleMove['U'])&& isHorizontallyBlocked(possibleMove['U']))
+                ||
+                (state.hasBoxAt(possibleMove['D'])&& isHorizontallyBlocked(possibleMove['D'])) 
+            )            
+        ) return 1;
+
+        return 0;
+    }
+
+    bool isDeadLock(std::pair<int, int> pos, ProblemState &state)
+    {
+        return (deadlockTable[pos.first][pos.second] || checkDynamicDeadlock(pos, state));
     }
 
     bool isDeadEnd(ProblemState &state)
@@ -195,7 +260,7 @@ public:
         {
             if (ProblemState::holes.count(pp))
                 continue;
-            if (isDeadLock(pp))
+            if (isDeadLock(pp, state))
                 return true;
         }
         return false;
