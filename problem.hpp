@@ -79,7 +79,6 @@ private:
     int h, w;                                     // height and width
     std::vector<std::string> level;               // padded level representation
     std::vector<std::vector<bool>> deadlockTable; // tells if box at [x,y] can be ever moved to a hole
-
 public:
     Level(std::vector<std::string> &level_representation)
     {
@@ -268,6 +267,7 @@ public:
     */
     bool isDeadEnd(ProblemState &state)
     {
+        std:: set<std:: pair<int,int>> solutionsInDeadLock;
         for (auto pp : state.boxes)
         {
             if (ProblemState::holes.count(pp))

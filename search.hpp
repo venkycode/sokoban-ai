@@ -33,7 +33,7 @@ std::pair<int,std::pair<int,int>> closestPathToHole(std:: pair<int,int> pos,Prob
             
             if(vis.count(nx+(ny<<20))) continue;
             if(P.level.isWall({nx,ny})) continue;
-            if(state.hasBoxAt({nx,ny})) bfsq.insert({c+1,{nx,ny}});
+            if(state.hasBoxAt({nx,ny})) bfsq.insert({c+6,{nx,ny}});
             else bfsq.insert({c+1,{nx,ny}});
         }
     }
@@ -160,12 +160,17 @@ long long minBipartiteWithTopologicallyClosestHoleHeuristic(ProblemState& state,
     
     long long minBipartiteWeight=0;
 
-    int sz= state.boxes.size();
+    
 
     std:: set<std::pair<int,int>> remBoxes=state.boxes;
     std:: set<std::pair<int,int>> remHoles=ProblemState:: holes;
 
+    std::vector<std::pair<int,int>> common;
+
+    for(auto pp: remBoxes) if(remHoles.count(pp)) common.push_back(pp);
+    for(auto pp: common) {remHoles.erase(pp); remBoxes.erase(pp);}
     
+    int sz= remBoxes.size();
     for(int i=0; i< sz; i++)
     {
         std:: pair<int,int>a= *remBoxes.begin();
@@ -187,7 +192,7 @@ long long minBipartiteWithTopologicallyClosestHoleHeuristic(ProblemState& state,
             }
         }
         //std::cerr<<mn<<std::endl;
-        minBipartiteWeight+=mn;
+        minBipartiteWeight+=mn+p.level.averageDimension();
         remBoxes.erase(a);
         remHoles.erase(b);
     }
