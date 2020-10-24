@@ -8,20 +8,43 @@ long long manhat(std::pair<int, int> p1, std::pair<int, int> p2)
 }
 
 
-
-struct Cmp
+std::pair<int,std::pair<int,int>> closestPathToHole(std:: pair<int,int> pos,Problem & P, ProblemState & state,const std::set<std:: pair<int,int>> & remHoles,long long depthLimit)
 {
+    std:: set<std::pair<int,std::pair<int,int>>> bfsq;
+    std:: unordered_set<long long> vis;
+    bfsq.insert({0,pos});
 
-    bool operator()(std::pair<std::pair<long long, long long>, ProblemState>& A, std::pair<std::pair<long long, long long>, ProblemState> &B)
+    while (bfsq.size())
     {
-        if(A.first.first==B.first.first) 
-            return A.first.second< B.first.second;
-        
-        return A.first.first < B.first.first;
-    }
-};
+        auto cur= *bfsq.begin();
+        bfsq.erase(bfsq.begin());
+        long long x= cur.second.first;
+        long long y= cur.second.second;
+        long long c= cur.first;
+        if(remHoles.count({x,y})) return {c,{x,y}};
+        if(c>depthLimit) return {INT_MAX,{-1,-1}};
 
-long long closestHoleHeur(ProblemState &state)
+        vis.insert(x+(y<<20));
+
+        for(int i=0; i<4; i++)
+        {
+            int nx= x+dx[i];
+            int ny= y+dy[i];
+            
+            if(vis.count(nx+(ny<<20))) continue;
+            if(P.level.isWall({nx,ny})) continue;
+            if(state.hasBoxAt({nx,ny})) bfsq.insert({c+1,{nx,ny}});
+            else bfsq.insert({c+1,{nx,ny}});
+        }
+    }
+    std::cerr<<"Control reached invalid end"<<std::endl;
+}
+
+
+/*
+Each box consider closest hole as goal
+*/
+long long closestHoleHeur(ProblemState &state,Problem & P)
 {
     long long ans = 0;
 
@@ -50,9 +73,22 @@ long long closestHoleHeur(ProblemState &state)
     return ans;
 }
 
-long long minBipartiteHeuristic(ProblemState& state)
+
+/*
+
+Create a Min weight bipartite considering two partites as holesPositions and boxesPositions
+and weights of any edge as manhatten distance between them
+
+O(S^3) where S=number of holes
+
+*/
+long long minBipartiteHeuristic(ProblemState& state,Problem & P)
 {
-    static std:: unordered_map<unsigned long long , long long> memoisedAnswer;
+    /*
+    unordered_map which keep track if the answer was calculated previously
+    */
+    static std:: unordered_map<unsigned long long , long long> memoisedAnswer; 
+    
     long long ans = 0;
 
     for (auto pp : state.boxes)
@@ -64,7 +100,7 @@ long long minBipartiteHeuristic(ProblemState& state)
         remin(ans, manhat(pp, state.robo));
     }
     unsigned long long hashOfSet= hashSetOfPairs(state.boxes);
-    if(memoisedAnswer.count(hashOfSet)) return ans+100*memoisedAnswer[hashOfSet];
+    if(memoisedAnswer.count(hashOfSet)) return ans+(P.level.averageDimension())*memoisedAnswer[hashOfSet];
     
     long long minBipartiteWeight=0;
 
@@ -97,18 +133,89 @@ long long minBipartiteHeuristic(ProblemState& state)
 
     memoisedAnswer[hashOfSet]= minBipartiteWeight;
 
-    return ans+100*minBipartiteWeight;
+    return ans+ (P.level.averageDimension())*minBipartiteWeight;
      
 }
 
-std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S))
+
+long long minBipartiteWithTopologicallyClosestHoleHeuristic(ProblemState& state,Problem & p)
+{
+    /*
+    unordered_map which keep track if the answer was calculated previously
+    */
+    static std:: unordered_map<unsigned long long , long long> memoisedAnswer; 
+    
+    long long ans = 0;
+
+    for (auto pp : state.boxes)
+    {
+        if (state.holes.count(pp))
+            continue;
+        if (!ans)
+            ans = manhat(pp, state.robo);
+        remin(ans, manhat(pp, state.robo));
+    }
+    unsigned long long hashOfSet= hashSetOfPairs(state.boxes);
+    if(memoisedAnswer.count(hashOfSet)) return ans+(memoisedAnswer[hashOfSet]);
+    
+    long long minBipartiteWeight=0;
+
+    int sz= state.boxes.size();
+
+    std:: set<std::pair<int,int>> remBoxes=state.boxes;
+    std:: set<std::pair<int,int>> remHoles=ProblemState:: holes;
+
+    
+    for(int i=0; i< sz; i++)
+    {
+        std:: pair<int,int>a= *remBoxes.begin();
+        int mn;
+        std::pair<int,int> b;
+        std::pair<int,std::pair<int,int>> tup= closestPathToHole(a,p,state,remHoles,INT_MAX);
+        mn= tup.first;
+        b= tup.second;
+        if(mn==INT_MAX) std::cerr<<"Unexpected value in tup"<<std::endl;
+        for(auto aa: remBoxes)
+        {
+            if(!mn) break;
+            tup=closestPathToHole(aa,p,state,remHoles,mn);
+            if(tup.first< mn)
+            {
+                b= tup.second;
+                a=aa;
+                mn= tup.first;
+            }
+        }
+        //std::cerr<<mn<<std::endl;
+        minBipartiteWeight+=mn;
+        remBoxes.erase(a);
+        remHoles.erase(b);
+    }
+
+    memoisedAnswer[hashOfSet]= minBipartiteWeight;
+
+    return ans+(minBipartiteWeight);
+     
+}
+
+void print_state(ProblemState & s)
+{   
+    std::cerr<<"State"<<std::endl;
+    std:: cerr<<s.robo.first<<" "<<s.robo.second<<std::endl;
+    for(auto robo: s.boxes)
+    {
+        std:: cerr<<robo.first<<" "<<robo.second<<std::endl;
+    }
+}
+
+std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S,Problem & p))
 {
     std::cout<<problem.nodesExpanded<<std::endl;
     std::set<std::pair<std::pair<long long, long long>, ProblemState>> fringe;
 
     ProblemState startState = problem.startState;
 
-    fringe.insert({{heuristicFunction(startState), 0}, startState});
+    fringe.insert({{heuristicFunction(startState,problem), 0}, startState});
     std:: unordered_set<unsigned long long > visited;
     visited.insert(startState.hash());
     ProblemState s1 = problem.startState;
@@ -117,6 +224,8 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S)
     {
         std::pair<std::pair<long long, long long>, ProblemState> cur_node = *fringe.begin();
         fringe.erase(fringe.begin());
+        
+        
         if (problem.isGoalState(cur_node.second))
         {
             std::cout<<problem.nodesExpanded<<std::endl;
@@ -125,7 +234,7 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S)
 
         progressLogger(problem.nodesExpanded) ;
 
-        if(problem.nodesExpanded> 1e7 ) 
+        if(problem.nodesExpanded> 1e6 ) 
         {
             std::cout<<problem.nodesExpanded<<std::endl;
             std::cerr<<"Failure";
@@ -138,11 +247,12 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S)
         {
             if(!visited.count(next_state.hash()))
             {
-                fringe.insert({{cur_g + heuristicFunction(next_state), cur_g}, next_state});
+                
+                fringe.insert({{cur_g + heuristicFunction(next_state,problem), cur_g}, next_state});
                 visited.insert(next_state.hash());
             }
         }
     }
-
+    std::cerr<<"unexpected failure in A*"<< std::endl;
     return "";
 }

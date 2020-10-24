@@ -1,4 +1,10 @@
 #include "problem.hpp"
+/*
+
+Use this program to make level.txt file compatible to sokoban ui level .
+
+*/
+
 
 
 using namespace std;

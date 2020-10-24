@@ -4,6 +4,7 @@
 /*
 abstract representation of state
 */
+
 class ProblemState
 {
 
@@ -11,9 +12,10 @@ public:
     std::set<std::pair<int, int>> boxes;               // location of boxes
     inline static std::set<std::pair<int, int>> holes; // location of holes common for all ProblemState obj hence static
     std::pair<int, int> robo;                          // location of the agent/player
-    std::string actions;
-    bool hashed;
-    unsigned long long hashv;
+    std::string actions;                               // actions to reach current state
+    bool hashed;                                       // bool to check whether the object was previously hashed
+    unsigned long long hashv;                          // hash of object
+
     ProblemState(std::set<std::pair<int, int>> boxes, std::pair<int, int> robo, std::string actions = "")
     {
         this->boxes = boxes;
@@ -23,25 +25,31 @@ public:
         this->hashv = hash();
         hashed = 1;
     }
+
     ProblemState()
     {
     }
 
-    bool hasBoxAt(std::pair<int, int> pos)
+    inline bool hasBoxAt(std::pair<int, int> pos)
     {
         return boxes.count(pos);
     }
 
-    bool operator<(const ProblemState &P) const
+    /*
+        comparators to make the class compatible with
+        std:: set 
+    */
+    inline bool operator<(const ProblemState &P) const
     {
-        return actions < P.actions;
+        return this->hashv < P.hashv;
     }
 
     bool operator==(const ProblemState &anotherState) const
     {
-        return ((boxes == anotherState.boxes) && (robo == anotherState.robo));
+        return hashv==hashv;
     }
 
+    //standard hash function for object
     unsigned long long hash() const
     {
         unsigned long long seed = boxes.size();
@@ -56,17 +64,21 @@ public:
         seed ^= 1ll + robo.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         seed ^= 1ll + robo.second + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         seed ^= 1ll + (robo.first + robo.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-
         return seed;
     }
 };
 
+/*
+    Wrapper around static elements (walls and holes) 
+    of the level
+    Contains static deadlockTable to detect deadLock positions
+*/
 class Level
 {
 private:
-    int h, w;                       // height and width
-    std::vector<std::string> level; // padded level representation
-    std::vector<std::vector<bool>> deadlockTable;
+    int h, w;                                     // height and width
+    std::vector<std::string> level;               // padded level representation
+    std::vector<std::vector<bool>> deadlockTable; // tells if box at [x,y] can be ever moved to a hole
 
 public:
     Level(std::vector<std::string> &level_representation)
@@ -83,18 +95,22 @@ public:
             //adding wall to left
             for (int j = 0; j < cw; j++)
             {
-                if (level_representation[i][j] == _WALL_)
+                if( (level_representation[i][j] == _WALL_ ))
                     break;
                 level_representation[i][j] = _WALL_;
             }
+            // adding wall to right
             for (int j = cw; j < w; j++)
             {
                 level_representation[i].push_back(_WALL_);
             }
         }
+        //initial assignement as all positions deadLocked
         deadlockTable.assign(h, std::vector<bool>(w, 1));
+
         this->level = level_representation;
     }
+
     Level()
     {
     }
@@ -119,16 +135,23 @@ public:
             }
 
         ProblemState::holes = holes;
+
         createDeadlockTable(holes);
+
         return ProblemState(boxes, ini_robo_pos);
     }
 
+    // creates static database of deadLock positions using Multi Source BFS
     void createDeadlockTable(std::set<std::pair<int, int>> &holes)
     {
+
         std::set<std::pair<int, std::pair<int, int>>> bfsq;
+
         for (auto pp : holes)
             bfsq.insert({0, pp});
+
         std::vector<std::vector<bool>> vis(h, std::vector<bool>(w, 0));
+
         while (!bfsq.empty())
         {
             auto pp = *bfsq.begin();
@@ -136,29 +159,35 @@ public:
 
             int x = pp.second.first;
             int y = pp.second.second;
-            deadlockTable[x][y] = 0;
+
+            deadlockTable[x][y] = 0; // reachable
             vis[x][y] = 1;
+
             int c = pp.first;
             c++;
             for (int i = 0; i < 4; i++)
             {
                 if (isWall(x + dx[i], y + dy[i]) || isWall(x + 2 * dx[i], y + 2 * dy[i]))
                     continue;
+
                 if (vis[x + dx[i]][y + dy[i]])
                     continue;
+
                 bfsq.insert({c, {x + dx[i], y + dy[i]}});
             }
         }
     }
 
-    bool isInsideBounds(int x, int y)
+    //checks if the co-ordinates are inside level bounds
+    bool isInsideBounds(int x, int y) const
     {
         if (x < h && x >= 0 && y < w && y >= 0)
             return 1;
         return 0;
     }
 
-    bool isWall(int x, int y)
+    //checks for wall
+    bool isWall(int x, int y) const
     {
         if (!isInsideBounds(x, y))
         {
@@ -184,36 +213,21 @@ public:
         return 0;
     }
 
-    bool isVerticallyBlocked(std:: pair<int,int>  pos )
+    //checks if the block is blocked vertically by walls
+    bool isVerticallyBlocked(std::pair<int, int> &pos)
     {
-        int x= pos.first;
-        int y= pos.second;
-
-        std::map<char, std::pair<int, int>> possibleMove;
-
-        for (int i = 0; i < 4; i++)
-            possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
-
-
-        return (isWall(possibleMove['U'])||isWall(possibleMove['D']));
-        
+        EfficientMovesLookup possibleMove(pos); // outputs cordinates in perticular direction
+        return (isWall(possibleMove['U']) || isWall(possibleMove['D']));
     }
 
-    bool isHorizontallyBlocked(std:: pair<int,int>  pos )
+    //checks if the block is blocked horizontally by walls
+    bool isHorizontallyBlocked(std::pair<int, int> pos)
     {
-        int x= pos.first;
-        int y= pos.second;
-
-        std::map<char, std::pair<int, int>> possibleMove;
-
-        for (int i = 0; i < 4; i++)
-            possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
-
-
-        return (isWall(possibleMove['R'])||isWall(possibleMove['L']));
-
+        EfficientMovesLookup possibleMove(pos); // outputs cordinates in perticular direction
+        return (isWall(possibleMove['R']) || isWall(possibleMove['L']));
     }
 
+    //checks for deadlocks caused by box positions
     bool checkDynamicDeadlock(std::pair<int, int> pos, ProblemState &state)
     {
         int x = pos.first;
@@ -226,34 +240,32 @@ public:
         for (int i = 0; i < 4; i++)
             possibleMove[dir[i]] = {x + dx[i], y + dy[i]};
 
-        if(
-            isVerticallyBlocked(pos) 
-            &&
-            (
-                (state.hasBoxAt(possibleMove['R'])&& isVerticallyBlocked(possibleMove['R']))
-                ||
-                (state.hasBoxAt(possibleMove['L'])&& isVerticallyBlocked(possibleMove['L'])) 
-            )            
-        ) return 1;
+        if (
+            isVerticallyBlocked(pos) &&
+            ((state.hasBoxAt(possibleMove['R']) && isVerticallyBlocked(possibleMove['R'])) ||
+             (state.hasBoxAt(possibleMove['L']) && isVerticallyBlocked(possibleMove['L']))))
+            return 1;
 
-        if(
-            isHorizontallyBlocked(pos) 
-            &&
-            (
-                (state.hasBoxAt(possibleMove['U'])&& isHorizontallyBlocked(possibleMove['U']))
-                ||
-                (state.hasBoxAt(possibleMove['D'])&& isHorizontallyBlocked(possibleMove['D'])) 
-            )            
-        ) return 1;
+        if (
+            isHorizontallyBlocked(pos) &&
+            ((state.hasBoxAt(possibleMove['U']) && isHorizontallyBlocked(possibleMove['U'])) ||
+             (state.hasBoxAt(possibleMove['D']) && isHorizontallyBlocked(possibleMove['D']))))
+            return 1;
 
         return 0;
     }
 
+
+    //checks for dynamic and static deadlock
     bool isDeadLock(std::pair<int, int> pos, ProblemState &state)
     {
         return (deadlockTable[pos.first][pos.second] || checkDynamicDeadlock(pos, state));
     }
 
+    /*
+    Deadend: A state which will never result in a solution
+    check if the state is deadend 
+    */
     bool isDeadEnd(ProblemState &state)
     {
         for (auto pp : state.boxes)
@@ -265,17 +277,24 @@ public:
         }
         return false;
     }
+    
     std ::vector<std::string> &getLevelVector()
     {
         return this->level;
     }
+    long long averageDimension()
+    {
+        return h+w;
+    }
 };
+
+
 
 class Problem
 {
 
 public:
-    Level level;
+    Level level; // level abstraction
     ProblemState startState;
     long long nodesExpanded;
 

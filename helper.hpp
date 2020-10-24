@@ -19,6 +19,31 @@ const std::map<char, int> rDir = {
                                     {'L', 3}
                                 };
 
+
+class EfficientMovesLookup
+{
+    std::pair<int,int> pos;
+
+    public:
+    
+    EfficientMovesLookup(std::pair<int,int> & p)
+    {
+        this->pos=p;
+    }
+
+    std::pair<int,int>  operator[] ( char ch)
+    {
+        int id=0;
+        if(ch=='D') id=0;
+        else if(ch=='R') id=1;
+        else if(ch=='U') id=2;
+        else if(ch=='L') id=3;
+        else std::cerr<<"Invalid lookup for moves"<<ch<<std::endl;
+
+        return {pos.first+dx[id],pos.second+dy[id]};
+    }
+};
+
 template <class T>
 inline bool remax(T &a, T b) // assign max value to a
 {
