@@ -237,9 +237,9 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S,
             return cur_node.second.actions;
         }
 
-        progressLogger(problem.nodesExpanded) ;
+        progressLogger(problem.nodesExpanded,18,cur_node.second.actions);
 
-        if(problem.nodesExpanded> 1e6 ) 
+        if(problem.nodesExpanded> 1e8 ) 
         {
             std::cout<<problem.nodesExpanded<<std::endl;
             std::cerr<<"Failure";

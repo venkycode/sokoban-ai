@@ -57,9 +57,9 @@ inline bool remin(T &a, T b) //  assign min value to a
 }
 
 
-long long hashSetOfPairs(std::set<std:: pair<int,int>> &inp )
+long long hashSetOfPairs(std::set<std:: pair<int,int>> &inp, unsigned long long seed=0 )
 {
-        unsigned long long seed= inp.size();
+        seed^= inp.size();
         for(auto & pp: inp)
         {
             seed^= 1ll*pp.first + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -70,10 +70,10 @@ long long hashSetOfPairs(std::set<std:: pair<int,int>> &inp )
 }
 
 
-inline void progressLogger(long long & cnt)
+inline void progressLogger(long long & cnt,long long epochLen, std::string & actions)
 {
     static long long last=0;
 
-    if(( (last+1)<<15   ) <cnt) {std::cerr<<((last+1)<<15)<<std::endl; last++;}
+    if(( (last+1)<<epochLen   ) <cnt) {std::cerr<<((last+1)<<epochLen)<<" "<<actions<<std::endl; last++;}
 
 }

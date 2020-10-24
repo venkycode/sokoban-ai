@@ -213,7 +213,7 @@ public:
     }
 
     //checks if the block is blocked vertically by walls
-    bool isVerticallyBlocked(std::pair<int, int> &pos)
+    bool isVerticallyBlocked(std::pair<int, int> pos)
     {
         EfficientMovesLookup possibleMove(pos); // outputs cordinates in perticular direction
         return (isWall(possibleMove['U']) || isWall(possibleMove['D']));
@@ -267,13 +267,114 @@ public:
     */
     bool isDeadEnd(ProblemState &state)
     {
-        std:: set<std:: pair<int,int>> solutionsInDeadLock;
+
+        static std:: unordered_map<long long , bool> memoiseResults;
+        std::set<std::pair<int,int>> reachablePos;
+        for(int i=0 ; i<h; i++)
+        for(int j=0; j<w;j++) 
+        {
+            if(!isWall({i,j}) && !state.hasBoxAt({i,j})) reachablePos.insert({i,j});
+        }
+
+        unsigned long long seed= hashSetOfPairs(reachablePos);
+        seed= hashSetOfPairs(state.boxes,seed);
+        if(memoiseResults.count(seed)) return memoiseResults[seed];
+        memoiseResults[seed]=0;
+        std:: set<std:: pair<int,int>> solvedBoxInDeadlock;
         for (auto pp : state.boxes)
         {
             if (ProblemState::holes.count(pp))
+            {
+                if (isDeadLock(pp, state)) solvedBoxInDeadlock.insert(pp);
                 continue;
+            }
             if (isDeadLock(pp, state))
+            {
+                memoiseResults[seed]=true;
                 return true;
+            }
+        }
+        
+        for(auto pp: state.boxes)
+        {
+            if (ProblemState::holes.count(pp))
+                continue;
+            
+
+            std:: set<std:: pair<int,std::pair<int,int>>> bfsq;
+
+            bfsq.insert({0,pp});
+            std:: unordered_set<long long> vis;
+            int f=0;
+            while (bfsq.size())
+            {
+                auto cur= *bfsq.begin();
+                bfsq.erase(cur);
+                int c= cur.first;
+                long long x= cur.second.first;
+                long long y = cur.second.second; 
+                if(cur.second==state.robo) 
+                {
+                    f=1;
+                    break;
+                }          
+                vis.insert(x+ (y<<20));
+                c++;
+                EfficientMovesLookup movesLookup(cur.second);
+
+                if(!(
+                    (vis.count(1ll*movesLookup['U'].first+(1ll*movesLookup['U'].second<<20)))
+                    ||
+                    (isWall(movesLookup['U']))
+                    ||
+                    (solvedBoxInDeadlock.count(movesLookup['U']))
+                    ||
+                    (state.hasBoxAt(movesLookup['U']) && isHorizontallyBlocked(movesLookup['U'])
+                    &&state.hasBoxAt(cur.second)) 
+                    )
+                ) bfsq.insert({c,movesLookup['U']}) ;
+                
+                if(!(
+                    (vis.count(1ll*movesLookup['D'].first+(1ll*movesLookup['D'].second<<20)))
+                    ||
+                    (isWall(movesLookup['D']))
+                    ||
+                    (solvedBoxInDeadlock.count(movesLookup['D']))
+                    ||
+                    (state.hasBoxAt(movesLookup['D']) && isHorizontallyBlocked(movesLookup['D'])
+                    &&state.hasBoxAt(cur.second)) 
+                    )
+                ) bfsq.insert({c,movesLookup['D']}) ;
+                if(!(
+                    (vis.count(1ll*movesLookup['L'].first+(1ll*movesLookup['L'].second<<20)))
+                    ||
+                    (isWall(movesLookup['L']))
+                    ||
+                    (solvedBoxInDeadlock.count(movesLookup['L']))
+                    ||
+                    (state.hasBoxAt(movesLookup['L']) && isVerticallyBlocked(movesLookup['L'])
+                    &&state.hasBoxAt(cur.second)) 
+                    )
+                ) bfsq.insert({c,movesLookup['L']}) ;
+
+                if(!(
+                    (vis.count(1ll*movesLookup['R'].first+(1ll*movesLookup['R'].second<<20)))
+                    ||
+                    (isWall(movesLookup['R']))
+                    ||
+                    (solvedBoxInDeadlock.count(movesLookup['R']))
+                    ||
+                    (state.hasBoxAt(movesLookup['R']) && isVerticallyBlocked(movesLookup['R'])
+                    &&state.hasBoxAt(cur.second)) 
+                    )
+                ) bfsq.insert({c,movesLookup['R']}) ;
+
+            }
+            if(!f)
+            { 
+                memoiseResults[seed]=true;
+                return 1;
+            }
         }
         return false;
     }
