@@ -1,5 +1,5 @@
 #include "problem.hpp"
-
+#include<chrono>
 
 
 long long manhat(std::pair<int, int> p1, std::pair<int, int> p2)
@@ -7,6 +7,16 @@ long long manhat(std::pair<int, int> p1, std::pair<int, int> p2)
     return abs(p1.first - p2.first) + abs(p2.second - p1.second);
 }
 
+
+long long find_satisfied(ProblemState& s)
+{
+    long long cnt=0;
+    for(auto &pp : s.boxes)
+    {
+        if(s.holes.count(pp)) cnt++;
+    }
+    return ((cnt*400)/(s.holes.size()));
+}
 
 std::pair<int,std::pair<int,int>> closestPathToHole(std:: pair<int,int> pos,Problem & P, ProblemState & state,const std::set<std:: pair<int,int>> & remHoles,long long depthLimit)
 {
@@ -215,7 +225,8 @@ void print_state(ProblemState & s)
 
 std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S,Problem & p))
 {
-    std::cout<<problem.nodesExpanded<<std::endl;
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::set<std::pair<std::pair<long long, long long>, ProblemState>> fringe;
 
     ProblemState startState = problem.startState;
@@ -224,25 +235,33 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S,
     std:: unordered_set<unsigned long long > visited;
     visited.insert(startState.hash());
     ProblemState s1 = problem.startState;
-
+    auto finish= std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
     while (fringe.size())
     {
         std::pair<std::pair<long long, long long>, ProblemState> cur_node = *fringe.begin();
         fringe.erase(fringe.begin());
         
-        
+        finish= std::chrono::high_resolution_clock::now();
+        elapsed = finish - start;
         if (problem.isGoalState(cur_node.second))
         {
-            std::cout<<problem.nodesExpanded<<std::endl;
+            std::cout<<"Solved! "<<problem.nodesExpanded<<" "<<elapsed.count()<<" ";
+            std::cerr<<cur_node.second.actions<<std::endl;
             return cur_node.second.actions;
         }
 
-        progressLogger(problem.nodesExpanded,18,cur_node.second.actions);
+        //progressLogger(problem.nodesExpanded,18,cur_node.second.actions);
+
+        if(elapsed.count()>600)
+        {
+            std::cout<<"Failure"<<" "<<problem.nodesExpanded<<" "<<elapsed.count()<<" ";
+            return cur_node.second.actions;
+        }    
 
         if(problem.nodesExpanded> 1e8 ) 
         {
-            std::cout<<problem.nodesExpanded<<std::endl;
-            std::cerr<<"Failure";
+            std::cout<<"Failure"<<" "<<problem.nodesExpanded<<" "<<elapsed.count()<<" ";
             return cur_node.second.actions;
         }
         long long cur_g = cur_node.first.second;
@@ -252,8 +271,8 @@ std::string AStar(Problem problem, long long heuristicFunction (ProblemState &S,
         {
             if(!visited.count(next_state.hash()))
             {
-                
-                fringe.insert({{cur_g + heuristicFunction(next_state,problem), cur_g}, next_state});
+                long long cur_gg= cur_g-find_satisfied(next_state);   
+                fringe.insert({{cur_gg + heuristicFunction(next_state,problem), cur_g}, next_state});
                 visited.insert(next_state.hash());
             }
         }

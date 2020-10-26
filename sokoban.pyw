@@ -35,8 +35,9 @@ def makeLevel(string):
     return p
 
 def findPlayer():
-    for i in range(w):
-        for j in range(h):
+    print(w,h)
+    for j in range(h):
+        for i in range(len(p[j])):
             if(p[j][i] == '@'):
                 return(i,j)
 
@@ -55,8 +56,8 @@ def draw():
     for i in range(hei, height, hei):
         canvas.create_line(0, i, width, i)
 
-    for i in range(w):
-        for j in range(h):
+    for j in range(h):
+        for i in range(len(p[j])):
             if(p[j][i] == '#'):
                 kvadrat(i*wid, j*hei, "#252525")
             if(p[j][i] == '@'):
@@ -173,7 +174,7 @@ def keyHandler(event):
 def askLevel():
     top = Tk()
     top.withdraw()
-    level = askopenfilename(initialdir = "level", filetypes = [('Level files', '.lvl'), ('All files', '.*')], title = "Choose the level you want to play")
+    level = askopenfilename(initialdir = "", filetypes = [('Txt files','.txt'),('Level files', '.lvl'), ('All files', '.*')], title = "Choose the level you want to play")
     top.destroy()
 
     try:
@@ -201,6 +202,7 @@ if(not p):
     pass
 else:
     w = len(p[0])
+    for x in p: w=max(w,len(x))
     h = len(p)
 
     dovoljeni = [' ', '.']

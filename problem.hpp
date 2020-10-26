@@ -408,12 +408,11 @@ public:
 
     bool isGoalState(ProblemState &state)
     {
-        for (auto box_position : state.boxes)
+        for(auto &pp: state.holes)
         {
-            if (ProblemState::holes.count(box_position))
-                continue;
-            else
-                return 0;
+            if(state.hasBoxAt(pp))
+            continue;
+            else return 0;
         }
         return 1;
     }

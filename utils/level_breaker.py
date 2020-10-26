@@ -13,6 +13,6 @@ for line in lines:
     if(line[0]==';'):
         wr.close()
         cnt+=1
-        wr= open(wr_pwd+"lvl"+str(cnt)+".txt","w")
+        wr= open(wr_pwd+"lvl"+str(cnt//100)+str((cnt//10)%10)+str(cnt%10)+".txt","w")
         continue
     wr.write(line)
