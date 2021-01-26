@@ -11,7 +11,7 @@ Use:
 
 We need to first find a solution of a level using the C++ binary.
 
-There are two binaries namely main.out and main1.out.
+There are two binaries namely solver.out and solverPro.out.
 ```
 solverPro.out : has strict checks for deadlocks
 
@@ -24,11 +24,11 @@ It can only be solved with strict deadlock checks as the result shown in standar
 Run the following command.
 
 ```
-./main.out < ./standard_levels/lvl107.txt &>solution.txt
+./solverPro.out < ./standard_levels/lvl107.txt &>solution.txt
 ```
 
 It requires nearly 130 seconds to run 
-Note: Make sure solution.txt only contains the encoded solution string. If the fails to find a solution it may contain extra logging info.
+Note: Make sure solution.txt only contains the encoded solution string. If the solver fails to find a solution it may contain extra logging info.
 After finding the solution we can run the UI with the -runWithSolution flag.
 
 Run the following command to get a live Demo of the solution to level.
